@@ -1,16 +1,11 @@
-# main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import router as api_router
+from app.core.config import get_frontend_origins
 
 app = FastAPI(title="ReflectAI Backend")
 
-# Allow your frontend origin here (or * for dev)
-origins = [
-    "http://localhost:3000",  # React dev server
-    "http://127.0.0.1:3000",
-]
-
+origins = get_frontend_origins()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
