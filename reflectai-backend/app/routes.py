@@ -13,6 +13,7 @@ def health():
 
 @router.post("/analyze")
 async def analyze(frame: UploadFile = File(...), audio: UploadFile = File(None)):
+    # Save uploaded files
     frame_path = save_file(frame)
     face_emotion = analyze_face(frame_path)
 
@@ -23,6 +24,7 @@ async def analyze(frame: UploadFile = File(...), audio: UploadFile = File(None))
         transcript = transcribe_audio(audio_path)
 
     reply = generate_reply(face_emotion, transcript or "")
+
     return {
         "frame_path": frame_path,
         "audio_path": audio_path,
