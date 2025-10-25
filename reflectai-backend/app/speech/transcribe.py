@@ -1,8 +1,5 @@
-# Placeholder for speech-to-text
-
-def transcribe_audio(audio_path: str):
-    """
-    Transcribe audio file to text.
-    Returns string transcript.
-    """
-    return None
+# app/speech/transcribe.py
+def transcribe_audio(audio_path: str) -> str:
+    # TODO: use Whisper for real transcription
+    # For now, return dummy text
+    return "I am feeling okay today."

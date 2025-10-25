@@ -1,9 +1,13 @@
-import aiofiles
-from fastapi import UploadFile
+# app/utils.py
+import os
+import uuid
 
-async def save_upload_file(upload_file: UploadFile, destination: str):
-    """Asynchronously save an UploadFile to disk."""
-    async with aiofiles.open(destination, "wb") as out_file:
-        content = await upload_file.read()
-        await out_file.write(content)
-    return destination
+UPLOAD_DIR = "uploads/"
+
+def save_file(file) -> str:
+    ext = file.filename.split(".")[-1]
+    filename = f"{uuid.uuid4().hex}_{file.filename}"
+    path = os.path.join(UPLOAD_DIR, filename)
+    with open(path, "wb") as f:
+        f.write(file.file.read())
+    return path
