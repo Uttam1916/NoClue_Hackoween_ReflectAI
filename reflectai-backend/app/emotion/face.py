@@ -1,6 +1,12 @@
-# app/emotion/face.py
+from deepface import DeepFace
+
 def analyze_face(image_path: str) -> str:
-    # TODO: replace with real model
-    # For now, return a random emotion
-    import random
-    return random.choice(["happy", "sad", "neutral", "angry"])
+    """
+    Returns dominant emotion from the given image
+    """
+    try:
+        result = DeepFace.analyze(img_path=image_path, actions=['emotion'])
+        return result['dominant_emotion']
+    except Exception as e:
+        print(f"DeepFace error: {e}")
+        return "neutral"
