@@ -77,7 +77,7 @@ async def analyze(frame: UploadFile = File(...), audio: UploadFile = File(...), 
         raise HTTPException(status_code=400, detail="user_id is required")
 
     # create unique filenames so concurrent uploads don't collide
-    frame_fname, audio_fname, ts = _unique_filenames(user_id, frame.filename, audio.filename)
+    frame_fname, audio_fname, ts = _unique_filenames(user_id, frame.filename or "frame.jpg", audio.filename or "audio.wav")
     frame_path = UPLOAD_FOLDER / frame_fname
     audio_path = UPLOAD_FOLDER / audio_fname
 
@@ -112,7 +112,13 @@ async def analyze(frame: UploadFile = File(...), audio: UploadFile = File(...), 
 
     # 4) Get therapist reply (your function)
     try:
-        therapist_reply = get_ai_reply(emotion, speech_text, conversation_history)
+        # ensure we pass a string to get_ai_reply (it expects emotion: str)
+        if isinstance(emotion, dict):
+            # try common keys first, then error message, then fallback to JSON string
+            emotion_str = emotion.get("emotion") or emotion.get("label") or emotion.get("error") or json.dumps(emotion, ensure_ascii=False)
+        else:
+            emotion_str = emotion
+        therapist_reply = get_ai_reply(emotion_str, speech_text, conversation_history)
     except Exception as e:
         therapist_reply = {"error": f"reply generation error: {e}"}
 
