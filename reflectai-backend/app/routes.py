@@ -131,33 +131,26 @@ async def analyze(frame: UploadFile = File(...), audio: UploadFile = File(...), 
 
     return JSONResponse(result)
 
+# --- existing imports ---
 
-# --- optional: batch processor to scan uploads/ folder and process unprocessed pairs ---
-@router.post("/process_uploads")
-async def process_uploads():
+async def _run_batch_process():
     """
-    Scan UPLOAD_FOLDER for image+audio pairs that don't have a results file yet,
-    process them using the same pipeline. Useful if frontend sometimes just drops
-    files into uploads/ and you want a server-side batch runner.
+    The actual reusable batch processor logic.
+    Returns {"processed_count": int, "processed": [...]}
     """
     processed = []
-    # find candidate prefixes (user_ts_name). We'll assume our saved naming pattern above.
     for f in sorted(UPLOAD_FOLDER.iterdir()):
         if f.is_file():
             name = f.name
-            # look for files that start with user_YYYY... pattern
             parts = name.split("_")
             if len(parts) < 2:
                 continue
-            prefix = "_".join(parts[:2])  # userid + timestamp
-            # check whether a result file exists
+            prefix = "_".join(parts[:2])
             result_candidate = RESULTS_FOLDER / f"{prefix}.json"
             if result_candidate.exists():
                 continue
-            # find matching frame + audio
             related = list(UPLOAD_FOLDER.glob(f"{prefix}_*"))
-            frame = None
-            audio = None
+            frame, audio = None, None
             for r in related:
                 if r.suffix.lower() in [".jpg", ".jpeg", ".png"]:
                     frame = r
@@ -165,9 +158,8 @@ async def process_uploads():
                     audio = r
             if not frame or not audio:
                 continue
-            # process
+
             try:
-                # convert audio if needed
                 try:
                     wav_path = _convert_to_wav_if_needed(audio)
                 except Exception:
@@ -183,10 +175,18 @@ async def process_uploads():
                     "speech_text": speech_text,
                     "therapist_reply": therapist_reply
                 }
-                (RESULTS_FOLDER / f"{prefix}.json").write_text(json.dumps(out, indent=2, ensure_ascii=False))
+                (RESULTS_FOLDER / f"{prefix}.json").write_text(
+                    json.dumps(out, indent=2, ensure_ascii=False)
+                )
                 processed.append(out)
             except Exception as e:
                 print("process_uploads error for", prefix, e)
                 continue
 
     return {"processed_count": len(processed), "processed": processed}
+
+
+@router.post("/process_uploads")
+async def process_uploads():
+    """API endpoint wrapper"""
+    return await _run_batch_process()

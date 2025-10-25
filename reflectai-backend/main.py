@@ -2,10 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import router as api_router
 from app.core.config import get_frontend_origins
+import asyncio, logging
 
-import asyncio
-import logging
-from app.routes import process_uploads  # import your function
+# ✅ Import the internal helper (not the route)
+from app.routes import _run_batch_process
 
 app = FastAPI(title="ReflectAI Backend")
 
@@ -20,27 +20,20 @@ app.add_middleware(
 
 app.include_router(api_router, prefix="/api")
 
-# ----------------------------------------------------------------
-# Background worker to auto-scan uploads/ folder every few seconds
-# ----------------------------------------------------------------
+# ---------------- BACKGROUND SCANNER ----------------
 async def periodic_batch_runner(interval: int = 10):
-    """
-    Runs process_uploads() every N seconds in the background.
-    """
-    await asyncio.sleep(3)  # small delay after startup
-    logging.info("Starting periodic upload processor...")
+    await asyncio.sleep(3)
+    logging.info("Starting periodic upload scanner...")
     while True:
         try:
-            # call your existing route logic directly
-            result = await process_uploads()
+            result = await _run_batch_process()
             count = result.get("processed_count", 0)
             if count > 0:
-                logging.info(f"[AutoBatch] Processed {count} new uploads.")
+                logging.info(f"[AutoBatch] Processed {count} uploads.")
         except Exception as e:
-            logging.error(f"[AutoBatch] Error during processing: {e}")
-        await asyncio.sleep(interval)  # wait before next scan
-
+            logging.error(f"[AutoBatch] Error: {e}")
+        await asyncio.sleep(interval)
 
 @app.on_event("startup")
 async def start_background_tasks():
-    asyncio.create_task(periodic_batch_runner(interval=10))  # every 10 sec
+    asyncio.create_task(periodic_batch_runner(10))
