@@ -1,5 +1,9 @@
 # app/speech/transcribe.py
+import whisper
+
+# Load model once at startup
+model = whisper.load_model("base")  # small/medium/large for better accuracy
+
 def transcribe_audio(audio_path: str) -> str:
-    # TODO: use Whisper for real transcription
-    # For now, return dummy text
-    return "I am feeling okay today."
+    result = model.transcribe(audio_path)
+    return result["text"]
