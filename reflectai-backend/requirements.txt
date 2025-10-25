@@ -4,11 +4,9 @@ python-multipart
 aiofiles
 python-dotenv
 requests
-
 opencv-python-headless
 deepface
 numpy
-
 openai-whisper
 google-generativeai
-
+openai
